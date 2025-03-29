@@ -1,10 +1,13 @@
 import pygame
 
+# Initialize all imported pygame modules
 pygame.init()
 
+# Set up screen width and height
 W, H = 900, 800
 sc = pygame.display.set_mode((W, H))
 
+# Define commonly used colors as RGB tuples
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -16,41 +19,46 @@ PINK = (252, 3, 252)
 PURPLE = (169, 3, 252)
 GRAY = (206, 204, 207)
 
+# Map color names to RGB values for easy access
 colors = {'white': WHITE, 'black': BLACK, 'red': RED, 'green': GREEN, 'blue': BLUE,
           'orange': ORANGE, 'yellow': YELLOW, 'pink': PINK, 'purple': PURPLE, 'gray': GRAY}
 
+# Load and scale the eraser image for display
 eraser = pygame.image.load('eraser.png').convert_alpha()
 eraser = pygame.transform.scale(eraser, (eraser.get_width()//15, eraser.get_height()//15))
-eraser_rect = eraser.get_rect(center=(700, 70))
-eraser2 = pygame.transform.scale(eraser, (eraser.get_width()//1.5, eraser.get_height()//1.5))
+eraser_rect = eraser.get_rect(center=(700, 70))  # Set eraser icon position
+eraser2 = pygame.transform.scale(eraser, (eraser.get_width()//1.5, eraser.get_height()//1.5))  # Bigger eraser for cursor
 
-
+# Initialize drawing settings
 current_color = RED
-mode = "brush"  # brush, rect, circle
+mode = "brush"  # Can be: brush, rect, circle, rhombus, right_tr, eq_tr
 
-drawed = []
+drawed = []  # List to store all drawn shapes
 
+# Fill background with white color
 sc.fill(WHITE)
 
+# Initialize mouse coordinates and other control variables
 x, y = 0, 0
-
 clock = pygame.time.Clock()
-
 font = pygame.font.Font('font_user.ttf', 15)
 
-is_erase = False
-is_visible = True
+is_erase = False  # Track if eraser mode is active
+is_visible = True  # Control cursor visibility
 
-start_pos = None
-preview_shape = None
-drawing_rhombus = False
+start_pos = None  # Store starting position for shapes
+preview_shape = None  # Store shape preview during drawing
+drawing_rhombus = False  # Not used in current code logic
 
+# Main loop
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            exit()
+            exit()  # Exit if window is closed
 
+        # Handle mouse click events
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Check if a color button was clicked
             if color_yellow.collidepoint(event.pos):
                 current_color = YELLOW
             elif color_green.collidepoint(event.pos):
@@ -67,9 +75,11 @@ while True:
                 current_color = PURPLE
             elif color_black.collidepoint(event.pos):
                 current_color = BLACK
+            # Toggle eraser mode
             elif eraser_rect.collidepoint(event.pos):
                 is_visible = not is_visible
                 is_erase = not is_erase
+            # Change tool mode
             elif square_button.collidepoint(event.pos):
                 mode = "rect"
             elif circle_button.collidepoint(event.pos):
@@ -82,27 +92,31 @@ while True:
                 mode = "right_tr"
             elif eq_tr_button.collidepoint(event.pos):
                 mode = "eq_tr"
+            # Start drawing based on mode
             elif event.pos[1] >= 183 and not is_erase:
                 if mode in ("rect", "circle", "rhombus", "right_tr", "eq_tr"):
                     start_pos = event.pos
                 elif mode == "brush":
                     drawed.append(("dot", event.pos, current_color))
-            
 
+        # Handle mouse release event to finalize shape
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and start_pos:
             end_pos = event.pos
             preview_shape = None
-            drawed.append((mode, start_pos, end_pos, current_color))
+            drawed.append((mode, start_pos, end_pos, current_color))  # Save final shape
             start_pos = None
 
+        # Handle mouse movement for drawing
         elif event.type == pygame.MOUSEMOTION:
             if start_pos and pygame.mouse.get_pressed()[0] and not is_erase:
                 preview_shape = (mode, start_pos, event.pos, current_color)
             elif pygame.mouse.get_pressed()[0] and mode == "brush" and not is_erase and pygame.mouse.get_pos()[1] >= 183:
                 drawed.append(("dot", pygame.mouse.get_pos(), current_color))
 
+    # Clear screen before redrawing everything
     sc.fill(WHITE)
 
+    # Draw all saved shapes
     for item in drawed:
         if item[0] == "dot":
             _, pos, color = item
@@ -119,6 +133,7 @@ while True:
             left = (x1, centery)
             rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
             rect.normalize()
+            # Draw based on shape type
             if fig_type == "rect":
                 pygame.draw.rect(sc, color, rect)
             elif fig_type == "circle":
@@ -126,16 +141,13 @@ while True:
                 radius = int(min(rect.width, rect.height) / 2)
                 pygame.draw.circle(sc, color, center, radius)
             elif fig_type == "rhombus":
-                
                 pygame.draw.polygon(sc, color, [top, right, bottom, left])
             elif fig_type == "right_tr":
                 pygame.draw.polygon(sc, color, [(x1, y1), (x2, y2), (x1, y2)])
-            
             elif fig_type == "eq_tr":
                 pygame.draw.polygon(sc, color, [(x1, y2), (x2, y2), ((x1+x2)//2, y2-abs(x2-x1))])
 
-
-
+    # Draw preview while dragging shape
     if preview_shape:
         fig_type, sp, ep, color = preview_shape
         rect = pygame.Rect(*sp, ep[0] - sp[0], ep[1] - sp[1])
@@ -161,12 +173,11 @@ while True:
         elif fig_type == "eq_tr":
             pos = pygame.mouse.get_pos()
             pygame.draw.polygon(sc, color, [sp, pos, ((sp[0]+pos[0])//2, pos[1]-abs(pos[0]-sp[0]))])
-            
 
-        
-
+    # Update mouse visibility
     pygame.mouse.set_visible(is_visible)
 
+    # Handle eraser logic
     if is_erase:
         sc.blit(eraser2, pygame.mouse.get_pos())
         if pygame.mouse.get_pressed()[0]:
@@ -183,6 +194,7 @@ while True:
                     fig_type, sp, ep, color = item
                     rect = pygame.Rect(*sp, ep[0] - sp[0], ep[1] - sp[1])
                     rect.normalize()
+                    # Remove shape if eraser overlaps it
                     if fig_type == "rect":
                         if not rect.collidepoint(mx, my):
                             new_drawed.append(item)
@@ -193,19 +205,17 @@ while True:
                         dy = my - center[1]
                         if dx**2 + dy**2 > radius**2:
                             new_drawed.append(item)
-                    elif fig_type == "rhombus":
-                        if (mx < min(sp[0], ep[0]) or mx > max(sp[0], ep[0])) and (my<min(sp[1], ep[1]) or my>max(sp[1], ep[1])):
-                            new_drawed.append(item)
-                    elif fig_type == "right_tr":
-                        if (mx < min(sp[0], ep[0]) or mx > max(sp[0], ep[0])) and (my<min(sp[1], ep[1]) or my>max(sp[1], ep[1])):
-                            new_drawed.append(item)
-                    elif fig_type == "eq_tr":
-                        if (mx < min(sp[0], ep[0]) or mx > max(sp[0], ep[0])) and (my<min(sp[1], ep[1]) or my>max(sp[1], ep[1])):
+                    else:  # rough bounding box erase for other shapes
+                        if (mx < min(sp[0], ep[0]) or mx > max(sp[0], ep[0])) and (my < min(sp[1], ep[1]) or my > max(sp[1], ep[1])):
                             new_drawed.append(item)
             drawed = new_drawed
 
+    # Draw UI components: color buttons, tool icons, text
+    # Display current color
     pygame.draw.rect(sc, GRAY, (50, 30, 130, 130), 5)
     pygame.draw.rect(sc, current_color, (55, 35, 120, 120))
+
+    # Draw all color selection buttons
     color_red_border = pygame.draw.rect(sc, GRAY, (295, 25, 60, 60), 5)
     color_red = pygame.draw.rect(sc, RED, (300, 30, 50, 50))
     color_yellow_border = pygame.draw.rect(sc, GRAY, (375, 25, 60, 60), 5)
@@ -223,6 +233,7 @@ while True:
     color_black_border = pygame.draw.rect(sc, GRAY, (535, 105, 60, 60), 5)
     color_black = pygame.draw.rect(sc, BLACK, (540, 110, 50, 50))
 
+    # Draw tool selection buttons
     brush_button = pygame.draw.rect(sc, GRAY, (660, 30, 60, 60), 5)
     pygame.draw.line(sc, BLACK, (665, 60), (715, 60), 4)
 
@@ -241,10 +252,12 @@ while True:
     eq_tr_button = pygame.draw.rect(sc, GRAY, (810, 30, 60, 60), 5)
     pygame.draw.polygon(sc, current_color, ((837.5, 35), (865, 85), (815, 85)))
 
+    # Draw UI section lines
     pygame.draw.line(sc, BLACK, (0, 180), (900, 180), 3)
     pygame.draw.line(sc, BLACK, (270, 180), (270, 0), 3)
     pygame.draw.line(sc, BLACK, (630, 180), (630, 0), 3)
 
+    # Add section labels
     write_color = font.render("Colors", True, BLACK)
     write_current = font.render("Now using", True, BLACK)
     write_tools = font.render("Tools", True, BLACK)
@@ -254,5 +267,6 @@ while True:
     sc.blit(write_tools, (660, 10))
     sc.blit(eraser, eraser_rect)
 
+    # Update display and control frame rate
     pygame.display.update()
     clock.tick(60)
