@@ -155,7 +155,7 @@ while True:
         sys.exit()
     
     # Increase game speed after collecting coins
-    if count > 10 and SPEED < 15:
+    if count > 5 and SPEED < 15:
         count = 0
         SPEED += 1
 
